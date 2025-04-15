@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Manage Users</title>
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAEzZYKQNqQLteWsZmDJKq0sYVhvG6YE9E",
+    authDomain: "rewardly-go.firebaseapp.com",
+    projectId: "rewardly-go",
+    storageBucket: "rewardly-go.appspot.com",
+    messagingSenderId: "587297879139",
+    appId: "1:587297879139:web:50499dff5b83aa420a3456",
+    measurementId: "G-C3V2KQ8TWT"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Get all users from Firestore
+        async function loadUsers() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                console.log("Query Snapshot:", querySnapshot);  // Debugging the query result
+                console.log("Number of documents:", querySnapshot.size);  // Debugging the size of the result
+
+                const userList = document.getElementById('userList');
+                userList.innerHTML = ""; // Clear the existing list
+                
+                if (querySnapshot.empty) {
+                    userList.innerHTML = "<p>No users found.</p>";
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const userData = doc.data();
+                    const userId = doc.id;
+                    console.log("User Data:", userData);  // Debugging the individual user data
+                    const userElement = document.createElement('div');
+                    userElement.classList.add('user-item');
+                    userElement.innerHTML = `
+                        <div class="flex justify-between items-center border-b border-gray-300 p-3">
+                            <span class="text-lg">${userData.firstName} ${userData.lastName}</span>
+                            <div>
+                                <button class="ban-button bg-red-500 text-white px-4 py-1 rounded mr-2" data-user-id="${userId}">Ban</button>
+                                <button class="disable-button bg-yellow-500 text-white px-4 py-1 rounded" data-user-id="${userId}">Disable</button>
+                            </div>
+                        </div>
+                    `;
+                    userList.appendChild(userElement);
+                });
+
+                // Add event listeners for ban and disable buttons
+                document.querySelectorAll('.ban-button').forEach(button => {
+                    button.addEventListener('click', (e) => banUser(e.target.dataset.userId));
+                });
+                document.querySelectorAll('.disable-button').forEach(button => {
+                    button.addEventListener('click', (e) => disableUser(e.target.dataset.userId));
+                });
+            } catch (error) {
+                console.error("Error loading users:", error);
+            }
+        }
+
+        // Ban a user by updating Firestore
+        async function banUser(userId) {
+            try {
+                console.log("Banning user with ID:", userId);  // Debugging the ban function
+                const userRef = doc(db, "users", userId);
+                await updateDoc(userRef, {
+                    isBanned: true
+                });
+                alert("User has been banned.");
+                loadUsers(); // Reload user list
+            } catch (error) {
+                console.error("Error banning user:", error);
+            }
+        }
+
+        // Disable a user by updating Firestore
+        async function disableUser(userId) {
+            try {
+                console.log("Disabling user with ID:", userId);  // Debugging the disable function
+                const userRef = doc(db, "users", userId);
+                await updateDoc(userRef, {
+                    isDisabled: true
+                });
+                alert("User has been disabled.");
+                loadUsers(); // Reload user list
+            } catch (error) {
+                console.error("Error disabling user:", error);
+            }
+        }
+
+        // Load users on page load
+        window.onload = function() {
+            loadUsers();
+        };
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7fafc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .user-item {
+            background-color: white;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .ban-button, .disable-button {
+            transition: all 0.3s ease;
+        }
+
+        .ban-button:hover, .disable-button:hover {
+            opacity: 0.8;
+        }
+
+        .ban-button {
+            background-color: #f56565;
+        }
+
+        .disable-button {
+            background-color: #ecc94b;
+        }
+
+        .p-3 {
+            padding: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Admin Dashboard - Manage Users</h1>
+        <div id="userList">Loading users...</div>
+    </div>
+
+</body>
+</html>
